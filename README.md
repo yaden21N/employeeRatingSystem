@@ -22,6 +22,14 @@ Then use the menu:
 
 Data is saved in `employees.json` in this folder.
 
+## How to run the tests
+
+```bash
+python3 -m unittest test_employee_store.py
+```
+
+The tests use a fake file so they do not change your real employee data.
+
 ## What this version does
 
 - Add name, department, job title, and email
@@ -42,10 +50,10 @@ The capstone is a **serverless** app (API Gateway, Lambda, DynamoDB, Cognito, S3
 | No login | Amazon Cognito (manager login) |
 | One computer | Cloud, more users, notifications |
 
-**Note:** the official Iteration 3 brief is a serverless **self-storage** application. This employee rating idea is a good practice project using the same AWS services. Confirm with your lecturer if you may use this idea for the capstone, or if you must build self-storage.
 
 ## Files
 
 - `main.py` — menu and user input
 - `employee_store.py` — load, save, search, and rate
+- `test_employee_store.py` — tests for the store functions
 - `employees.json` — created after you add the first employee
