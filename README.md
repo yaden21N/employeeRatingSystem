@@ -12,6 +12,14 @@ You need Python 3.
 python3 main.py
 ```
 
+### Local web list 
+
+```bash
+python3 server.py
+```
+
+Then open http://127.0.0.1:8000 in your browser. This page only lists employees. Add people in the terminal, then refresh the page.
+
 Then use the menu:
 
 1. Add employee
@@ -55,5 +63,9 @@ The capstone is a **serverless** app (API Gateway, Lambda, DynamoDB, Cognito, S3
 
 - `main.py` — menu and user input
 - `employee_store.py` — load, save, search, and rate
+- `server.py` — local web server
+- `web/index.html` — employee list page
+- `web/styles.css` — page styles
+- `web/list.js` — loads employees and fills the table
 - `test_employee_store.py` — tests for the store functions
 - `employees.json` — created after you add the first employee

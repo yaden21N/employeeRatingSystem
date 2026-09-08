@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Employee list</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <h1>Employees</h1>
+    <p class="note">
+      This page only lists people. Add them in the terminal with
+      <code>python3 main.py</code>, then refresh this page.
+    </p>
+    <p id="status">Loading...</p>
+    <table id="employee-table" hidden>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Department</th>
+          <th>Job title</th>
+          <th>Average rating</th>
+        </tr>
+      </thead>
+      <tbody id="employee-rows"></tbody>
+    </table>
+    <script src="list.js"></script>
+  </body>
+</html>
