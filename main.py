@@ -1,17 +1,21 @@
 """
-Employee Rating System - terminal app Version 0
+Employee Rating System - terminal app
 
 A manager can:
 - add employees
 - search for an employee
 - rate an employee
 - list all employees
+- edit an employee
+- delete an employee
 
 Data is saved in employees.json so it is not lost when you close the program.
 """
 
 from employee_store import (
     add_employee,
+    delete_employee,
+    edit_employee,
     search_employees,
     rate_employee,
     list_employees,
@@ -26,7 +30,9 @@ def print_menu():
     print("2. Search employee")
     print("3. Rate employee")
     print("4. List all employees")
-    print("5. Exit")
+    print("5. Edit employee")
+    print("6. Delete employee")
+    print("7. Exit")
     print()
 
 
@@ -59,11 +65,12 @@ def handle_add_employee():
     job_title = input("Job title: ").strip()
     email = input("Email: ").strip()
 
-    if name == "":
-        print("Name cannot be empty.")
+    try:
+        employee = add_employee(name, department, job_title, email)
+    except ValueError as error:
+        print(str(error))
         return
 
-    employee = add_employee(name, department, job_title, email)
     print("Employee added.")
     show_employee(employee)
 
@@ -71,7 +78,7 @@ def handle_add_employee():
 def handle_search_employee():
     print()
     print("--- Search employee ---")
-    query = input("Type a name, department, or ID: ").strip()
+    query = input("Type a name, department, job title, email, or ID: ").strip()
     results = search_employees(query)
 
     if len(results) == 0:
@@ -96,20 +103,14 @@ def handle_rate_employee():
     show_employee(employee)
 
     score_text = input("Score (1 to 5): ").strip()
-    if not score_text.isdigit():
-        print("Score must be a number from 1 to 5.")
-        return
-
-    score = int(score_text)
-    if score < 1 or score > 5:
-        print("Score must be from 1 to 5.")
-        return
-
     comment = input("Comment: ").strip()
-    if comment == "":
-        comment = "(no comment)"
 
-    updated = rate_employee(employee_id, score, comment)
+    try:
+        updated = rate_employee(employee_id, score_text, comment)
+    except ValueError as error:
+        print(str(error))
+        return
+
     print("Rating saved.")
     show_employee(updated)
 
@@ -126,12 +127,69 @@ def handle_list_employees():
         show_employee(employee)
 
 
+def handle_edit_employee():
+    print()
+    print("--- Edit employee ---")
+    employee_id = input("Employee ID: ").strip()
+    employee = get_employee_by_id(employee_id)
+
+    if employee is None:
+        print("No employee with that ID. Use search or list to find the ID.")
+        return
+
+    show_employee(employee)
+    print("Leave a field blank to keep the old value.")
+    name = input("Full name [" + employee["name"] + "]: ").strip()
+    department = input("Department [" + employee["department"] + "]: ").strip()
+    job_title = input("Job title [" + employee["job_title"] + "]: ").strip()
+    email = input("Email [" + employee["email"] + "]: ").strip()
+
+    if name == "":
+        name = employee["name"]
+    if department == "":
+        department = employee["department"]
+    if job_title == "":
+        job_title = employee["job_title"]
+    if email == "":
+        email = employee["email"]
+
+    try:
+        updated = edit_employee(employee_id, name, department, job_title, email)
+    except ValueError as error:
+        print(str(error))
+        return
+
+    print("Employee updated.")
+    show_employee(updated)
+
+
+def handle_delete_employee():
+    print()
+    print("--- Delete employee ---")
+    employee_id = input("Employee ID: ").strip()
+    employee = get_employee_by_id(employee_id)
+
+    if employee is None:
+        print("No employee with that ID. Use search or list to find the ID.")
+        return
+
+    show_employee(employee)
+    confirm = input("Type yes to delete this employee: ").strip().lower()
+    if confirm != "yes":
+        print("Delete cancelled.")
+        return
+
+    delete_employee(employee_id)
+    print("Employee deleted.")
+
+
 def main():
     print("Welcome. Employee data is stored in employees.json.")
+    print("You can also use the web app: python3 server.py")
 
     while True:
         print_menu()
-        choice = input("Choose an option (1-5): ").strip()
+        choice = input("Choose an option (1-7): ").strip()
 
         if choice == "1":
             handle_add_employee()
@@ -142,10 +200,14 @@ def main():
         elif choice == "4":
             handle_list_employees()
         elif choice == "5":
+            handle_edit_employee()
+        elif choice == "6":
+            handle_delete_employee()
+        elif choice == "7":
             print("Goodbye.")
             break
         else:
-            print("Please type a number from 1 to 5.")
+            print("Please type a number from 1 to 7.")
 
 
 if __name__ == "__main__":

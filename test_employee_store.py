@@ -49,12 +49,24 @@ class TestEmployeeStore(unittest.TestCase):
         self.assertEqual(employee["ratings"], [])
         self.assertTrue(len(employee["id"]) > 0)
 
+    def test_add_employee_rejects_empty_name(self):
+        with self.assertRaises(ValueError):
+            employee_store.add_employee("", "Engineering", "Developer", "ada@example.com")
+
     def test_list_employees_returns_added_people(self):
         employee_store.add_employee("Ada Lovelace", "Engineering", "Developer", "ada@example.com")
         employee_store.add_employee("Alan Turing", "Research", "Analyst", "alan@example.com")
 
         employees = employee_store.list_employees()
         self.assertEqual(len(employees), 2)
+
+    def test_list_employees_is_sorted_by_name(self):
+        employee_store.add_employee("Zoe", "Sales", "Rep", "zoe@example.com")
+        employee_store.add_employee("Amy", "Sales", "Rep", "amy@example.com")
+
+        employees = employee_store.list_employees()
+        self.assertEqual(employees[0]["name"], "Amy")
+        self.assertEqual(employees[1]["name"], "Zoe")
 
     def test_get_employee_by_id_finds_person(self):
         employee = employee_store.add_employee(
@@ -123,6 +135,65 @@ class TestEmployeeStore(unittest.TestCase):
     def test_rate_employee_returns_none_when_id_is_wrong(self):
         result = employee_store.rate_employee("not-real", 5, "Nice")
         self.assertIsNone(result)
+
+    def test_rate_employee_rejects_score_outside_range(self):
+        employee = employee_store.add_employee(
+            "Ada Lovelace",
+            "Engineering",
+            "Developer",
+            "ada@example.com",
+        )
+
+        with self.assertRaises(ValueError):
+            employee_store.rate_employee(employee["id"], 6, "Too high")
+
+        with self.assertRaises(ValueError):
+            employee_store.rate_employee(employee["id"], 0, "Too low")
+
+    def test_edit_employee_changes_details(self):
+        employee = employee_store.add_employee(
+            "Ada Lovelace",
+            "Engineering",
+            "Developer",
+            "ada@example.com",
+        )
+
+        updated = employee_store.edit_employee(
+            employee["id"],
+            "Ada L",
+            "Math",
+            "Analyst",
+            "ada.l@example.com",
+        )
+
+        self.assertEqual(updated["name"], "Ada L")
+        self.assertEqual(updated["department"], "Math")
+        self.assertEqual(updated["job_title"], "Analyst")
+        self.assertEqual(updated["email"], "ada.l@example.com")
+
+    def test_delete_employee_removes_person(self):
+        employee = employee_store.add_employee(
+            "Ada Lovelace",
+            "Engineering",
+            "Developer",
+            "ada@example.com",
+        )
+
+        found = employee_store.delete_employee(employee["id"])
+        self.assertTrue(found)
+        self.assertEqual(employee_store.list_employees(), [])
+
+    def test_json_shape_helpers(self):
+        employee = employee_store.add_employee(
+            "Ada Lovelace",
+            "Engineering",
+            "Developer",
+            "ada@example.com",
+        )
+        payload = employee_store.as_employee_list([employee])
+        self.assertEqual(payload["employees"][0]["name"], "Ada Lovelace")
+        self.assertEqual(employee_store.as_employee(employee)["employee"]["id"], employee["id"])
+        self.assertEqual(employee_store.as_error("oops")["error"], "oops")
 
 
 if __name__ == "__main__":
