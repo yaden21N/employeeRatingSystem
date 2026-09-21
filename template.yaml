@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Employee rating API — DynamoDB, Lambda, API Gateway
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: python3.12
+
+Resources:
+  EmployeesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  EmployeeApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: prod
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowHeaders:
+          - Content-Type
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+
+  EmployeeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_function.lambda_handler
+      CodeUri: lambda_src/
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref EmployeesTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EmployeesTable
+      Events:
+        ListEmployees:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref EmployeeApi
+            Path: /api/employees
+            Method: GET
+        AddEmployee:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref EmployeeApi
+            Path: /api/employees
+            Method: POST
+        GetEmployee:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref EmployeeApi
+            Path: /api/employees/{id}
+            Method: GET
+        EditEmployee:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref EmployeeApi
+            Path: /api/employees/{id}
+            Method: PUT
+        DeleteEmployee:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref EmployeeApi
+            Path: /api/employees/{id}
+            Method: DELETE
+        RateEmployee:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref EmployeeApi
+            Path: /api/employees/{id}/ratings
+            Method: POST
+
+Outputs:
+  ApiUrl:
+    Description: Base URL for the API (same paths as server.py)
+    Value: !Sub "https://${EmployeeApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+  TableName:
+    Description: DynamoDB table for employees
+    Value: !Ref EmployeesTable
