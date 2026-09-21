@@ -2,7 +2,7 @@
 
 Terminal and local web app for a manager to add employees, search them, rate them, edit them, and delete them.
 
-This is the local version (no AWS yet). It uses the same ideas that can later go in the cloud: store data, look it up, and update it.
+This is the local version plus an AWS API (DynamoDB, Lambda, API Gateway). The laptop app still uses `employees.json`. The cloud app uses a DynamoDB table.
 
 ## How to run the web app
 
@@ -43,10 +43,11 @@ The web app and the terminal app share the same file: `employees.json`.
 ## How to run the tests
 
 ```bash
-python3 -m unittest test_employee_store.py
+python3 -m unittest test_employee_store.py test_lambda_function.py
 ```
 
-The tests use a fake file so they do not change your real employee data.
+The store tests use a fake file so they do not change your real employee data.
+The Lambda tests fake DynamoDB so they do not need AWS.
 
 ## What this version does
 
@@ -97,18 +98,34 @@ JSON error shape:
 
 
 
-## How this can grow into the AWS :
+## How to deploy the AWS API
 
+You need the [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) and an AWS account.
 
+```bash
+sam build
+sam deploy --guided
+```
 
+After deploy, SAM prints `ApiUrl`. The paths are the same as the local server, for example:
 
-| Now (local)                             | Later (AWS)                    |
-| --------------------------------------- | ------------------------------ |
-| `employees.json`                        | DynamoDB table                 |
-| Python functions in `employee_store.py` | Lambda functions               |
-| `server.py` on your laptop              | API Gateway                    |
-| `web/` folder                           | S3 + CloudFront                |
-| No login                                | Amazon Cognito (manager login) |
+```text
+GET  {ApiUrl}/api/employees
+POST {ApiUrl}/api/employees
+POST {ApiUrl}/api/employees/{id}/ratings
+```
+
+The laptop web page (`python3 server.py`) still talks to the local server. S3, CloudFront, and Cognito are not set up yet.
+
+## How this maps to AWS
+
+| Now (local)                             | AWS now                        | Still later                    |
+| --------------------------------------- | ------------------------------ | ------------------------------ |
+| `employees.json`                        | DynamoDB table                 |                                |
+| Python functions in `employee_store.py` | Lambda + `dynamodb_store.py`   |                                |
+| `server.py` on your laptop              | API Gateway                    |                                |
+| `web/` folder                           |                                | S3 + CloudFront                |
+| No login                                |                                | Amazon Cognito (manager login) |
 
 
 
@@ -122,5 +139,8 @@ JSON error shape:
 - `web/styles.css` — page styles
 - `web/app.js` — talks to the API and updates the page
 - `test_employee_store.py` — tests for the store functions
-- `employees.json` — created after you add the first employee
+- `test_lambda_function.py` — tests for the Lambda routes
+- `template.yaml` — SAM template (table, Lambda, API Gateway)
+- `lambda_src/` — Lambda code that reads and writes DynamoDB
+- `employees.json` — created after you add the first employee (local only)
 
