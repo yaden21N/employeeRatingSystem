@@ -3,28 +3,85 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Employee list</title>
+    <title>Employee Rating System</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <h1>Employees</h1>
+    <h1>Employee Rating System</h1>
     <p class="note">
-      This page only lists people. Add them in the terminal with
-      <code>python3 main.py</code>, then refresh this page.
+      Local app. Data is saved in <code>employees.json</code> on this computer.
     </p>
-    <p id="status">Loading...</p>
-    <table id="employee-table" hidden>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Department</th>
-          <th>Job title</th>
-          <th>Average rating</th>
-        </tr>
-      </thead>
-      <tbody id="employee-rows"></tbody>
-    </table>
-    <script src="list.js"></script>
+    <p id="status"></p>
+
+    <section>
+      <h2>Search</h2>
+      <form id="search-form">
+        <label>
+          Search by name, department, job title, email, or ID
+          <input id="search-query" type="text" />
+        </label>
+        <button type="submit">Search</button>
+        <button type="button" id="show-all">Show all</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Employees</h2>
+      <p id="empty-list" class="empty" hidden>No employees yet. Add one below.</p>
+      <table id="employee-table" hidden>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Job title</th>
+            <th>Email</th>
+            <th>Average rating</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="employee-rows"></tbody>
+      </table>
+    </section>
+
+    <div class="forms">
+      <section>
+        <h2>Add employee</h2>
+        <form id="add-form">
+          <label>Full name <input id="add-name" type="text" required /></label>
+          <label>Department <input id="add-department" type="text" /></label>
+          <label>Job title <input id="add-job-title" type="text" /></label>
+          <label>Email <input id="add-email" type="email" /></label>
+          <button type="submit">Add</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Rate employee</h2>
+        <form id="rate-form">
+          <label>Employee ID <input id="rate-id" type="text" required /></label>
+          <label>
+            Score (1 to 5)
+            <input id="rate-score" type="number" min="1" max="5" required />
+          </label>
+          <label>Comment <input id="rate-comment" type="text" /></label>
+          <button type="submit">Save rating</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Edit employee</h2>
+        <form id="edit-form">
+          <label>Employee ID <input id="edit-id" type="text" required /></label>
+          <label>Full name <input id="edit-name" type="text" required /></label>
+          <label>Department <input id="edit-department" type="text" /></label>
+          <label>Job title <input id="edit-job-title" type="text" /></label>
+          <label>Email <input id="edit-email" type="email" /></label>
+          <button type="submit">Save changes</button>
+        </form>
+      </section>
+    </div>
+
+    <script src="app.js"></script>
   </body>
 </html>

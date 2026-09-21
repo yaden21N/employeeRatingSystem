@@ -1,6 +1,6 @@
 body {
   font-family: Arial, sans-serif;
-  max-width: 720px;
+  max-width: 960px;
   margin: 40px auto;
   padding: 0 16px;
   color: #222;
@@ -10,8 +10,31 @@ h1 {
   font-size: 24px;
 }
 
+h2 {
+  font-size: 18px;
+  margin-top: 28px;
+}
+
 p.note {
   color: #555;
+}
+
+label {
+  display: block;
+  margin: 8px 0;
+}
+
+input {
+  display: block;
+  margin-top: 4px;
+  width: 100%;
+  max-width: 320px;
+  padding: 6px;
+}
+
+button {
+  margin-right: 6px;
+  margin-top: 8px;
 }
 
 table {
@@ -24,6 +47,11 @@ td {
   text-align: left;
   padding: 8px 6px;
   border-bottom: 1px solid #ddd;
+  vertical-align: top;
+}
+
+.forms {
+  display: block;
 }
 
 .empty {
@@ -33,4 +61,20 @@ td {
 
 .error {
   color: #a00;
+}
+
+.ok {
+  color: #066806;
+}
+
+@media (min-width: 800px) {
+  .forms {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .forms section {
+    flex: 1;
+  }
 }
