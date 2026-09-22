@@ -37,6 +37,8 @@ WEB_FILES = {
     "/index.html": ("index.html", "text/html"),
     "/styles.css": ("styles.css", "text/css"),
     "/app.js": ("app.js", "text/javascript"),
+    "/cognito.js": ("cognito.js", "text/javascript"),
+    "/config.js": ("config.js", "text/javascript"),
 }
 
 

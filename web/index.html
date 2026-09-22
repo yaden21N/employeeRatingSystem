@@ -9,11 +9,42 @@
   <body>
     <h1>Employee Rating System</h1>
     <p class="note">
-      On this laptop the API is <code>server.py</code> and
-      <code>employees.json</code>. On AWS the page talks to API Gateway
-      (DynamoDB) using CORS.
+      On this laptop there is no login. On AWS you sign up with email,
+      confirm the code, then log in. API Gateway checks the Cognito token.
     </p>
     <p id="status"></p>
+
+    <section id="auth-section" hidden>
+      <h2>Manager login</h2>
+      <p id="logged-in-as" hidden></p>
+      <button type="button" id="logout-button" hidden>Log out</button>
+
+      <form id="signup-form">
+        <h3>Sign up</h3>
+        <label>Email <input id="signup-email" type="email" required /></label>
+        <label>
+          Password (8+ characters, upper, lower, number)
+          <input id="signup-password" type="password" required />
+        </label>
+        <button type="submit">Sign up</button>
+      </form>
+
+      <form id="confirm-form">
+        <h3>Confirm email</h3>
+        <label>Email <input id="confirm-email" type="email" required /></label>
+        <label>Code from email <input id="confirm-code" type="text" required /></label>
+        <button type="submit">Confirm</button>
+      </form>
+
+      <form id="login-form">
+        <h3>Log in</h3>
+        <label>Email <input id="login-email" type="email" required /></label>
+        <label>Password <input id="login-password" type="password" required /></label>
+        <button type="submit">Log in</button>
+      </form>
+    </section>
+
+    <div id="app-main">
 
     <section>
       <h2>Search</h2>
@@ -83,8 +114,10 @@
         </form>
       </section>
     </div>
+    </div>
 
     <script src="config.js"></script>
+    <script src="cognito.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

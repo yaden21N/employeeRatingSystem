@@ -3,6 +3,67 @@ function apiUrl(path) {
   return base + path;
 }
 
+function apiHeaders(includeJson) {
+  var headers = {};
+  if (includeJson) {
+    headers["Content-Type"] = "application/json";
+  }
+  var token = getIdToken();
+  if (token) {
+    headers.Authorization = "Bearer " + token;
+  }
+  return headers;
+}
+
+function apiFetch(url, options) {
+  options = options || {};
+  if (!options.headers) {
+    options.headers = apiHeaders(Boolean(options.body));
+  }
+  return fetch(url, options).then(function (response) {
+    if (response.status === 401) {
+      setIdToken("");
+      refreshAuthView();
+      setStatus("Please log in again.", "error");
+    }
+    return response;
+  });
+}
+
+function refreshAuthView() {
+  var authSection = document.getElementById("auth-section");
+  var appMain = document.getElementById("app-main");
+  var signup = document.getElementById("signup-form");
+  var confirm = document.getElementById("confirm-form");
+  var login = document.getElementById("login-form");
+  var loggedInAs = document.getElementById("logged-in-as");
+  var logoutButton = document.getElementById("logout-button");
+
+  if (!cognitoIsOn()) {
+    authSection.hidden = true;
+    appMain.hidden = false;
+    return;
+  }
+
+  authSection.hidden = false;
+  if (getIdToken()) {
+    signup.hidden = true;
+    confirm.hidden = true;
+    login.hidden = true;
+    loggedInAs.hidden = false;
+    loggedInAs.textContent = "You are logged in.";
+    logoutButton.hidden = false;
+    appMain.hidden = false;
+  } else {
+    signup.hidden = false;
+    confirm.hidden = false;
+    login.hidden = false;
+    loggedInAs.hidden = true;
+    logoutButton.hidden = true;
+    appMain.hidden = true;
+  }
+}
+
 function averageScore(ratings) {
   if (ratings.length === 0) {
     return "none yet";
@@ -117,7 +178,7 @@ function showEmployees(employees) {
       if (!ok) {
         return;
       }
-      fetch(apiUrl("/api/employees/" + id), { method: "DELETE" })
+      apiFetch(apiUrl("/api/employees/" + id), { method: "DELETE" })
         .then(function (response) {
           return response.json().then(function (data) {
             return { ok: response.ok, data: data };
@@ -149,7 +210,7 @@ function loadEmployees(query) {
     url = url + "?q=" + encodeURIComponent(query);
   }
 
-  fetch(url)
+  apiFetch(url)
     .then(function (response) {
       if (!response.ok) {
         throw new Error("Could not load employees");
@@ -184,9 +245,8 @@ document.getElementById("add-form").addEventListener("submit", function (event) 
     email: document.getElementById("add-email").value,
   };
 
-  fetch(apiUrl("/api/employees"), {
+  apiFetch(apiUrl("/api/employees"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   })
     .then(function (response) {
@@ -218,9 +278,8 @@ document.getElementById("rate-form").addEventListener("submit", function (event)
     comment: comment,
   };
 
-  fetch(apiUrl("/api/employees/" + employeeId + "/ratings"), {
+  apiFetch(apiUrl("/api/employees/" + employeeId + "/ratings"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   })
     .then(function (response) {
@@ -252,9 +311,8 @@ document.getElementById("edit-form").addEventListener("submit", function (event)
     email: document.getElementById("edit-email").value,
   };
 
-  fetch(apiUrl("/api/employees/" + employeeId), {
+  apiFetch(apiUrl("/api/employees/" + employeeId), {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   })
     .then(function (response) {
@@ -276,4 +334,68 @@ document.getElementById("edit-form").addEventListener("submit", function (event)
     });
 });
 
-loadEmployees();
+document.getElementById("signup-form").addEventListener("submit", function (event) {
+  event.preventDefault();
+  var email = document.getElementById("signup-email").value.trim();
+  var password = document.getElementById("signup-password").value;
+  cognitoSignUp(email, password)
+    .then(function (result) {
+      if (!result.ok) {
+        setStatus(cognitoMessage(result.data, "Could not sign up."), "error");
+        return;
+      }
+      document.getElementById("confirm-email").value = email;
+      setStatus("Check your email for a confirmation code.", "ok");
+    })
+    .catch(function () {
+      setStatus("Could not reach Cognito.", "error");
+    });
+});
+
+document.getElementById("confirm-form").addEventListener("submit", function (event) {
+  event.preventDefault();
+  var email = document.getElementById("confirm-email").value.trim();
+  var code = document.getElementById("confirm-code").value.trim();
+  cognitoConfirm(email, code)
+    .then(function (result) {
+      if (!result.ok) {
+        setStatus(cognitoMessage(result.data, "Could not confirm."), "error");
+        return;
+      }
+      document.getElementById("login-email").value = email;
+      setStatus("Email confirmed. You can log in now.", "ok");
+    })
+    .catch(function () {
+      setStatus("Could not reach Cognito.", "error");
+    });
+});
+
+document.getElementById("login-form").addEventListener("submit", function (event) {
+  event.preventDefault();
+  var email = document.getElementById("login-email").value.trim();
+  var password = document.getElementById("login-password").value;
+  cognitoLogin(email, password)
+    .then(function (result) {
+      if (!result.ok) {
+        setStatus(cognitoMessage(result.data, "Could not log in."), "error");
+        return;
+      }
+      refreshAuthView();
+      setStatus("Logged in.", "ok");
+      loadEmployees();
+    })
+    .catch(function () {
+      setStatus("Could not reach Cognito.", "error");
+    });
+});
+
+document.getElementById("logout-button").addEventListener("click", function () {
+  setIdToken("");
+  refreshAuthView();
+  setStatus("Logged out.", "ok");
+});
+
+refreshAuthView();
+if (!cognitoIsOn() || getIdToken()) {
+  loadEmployees();
+}

@@ -1,8 +1,10 @@
 """
 Copy the web folder to S3 and refresh CloudFront.
 
-Reads ApiUrl, WebBucketName, and CloudFrontDistributionId from the stack.
-Writes the API URL into config.js so the browser can call API Gateway (CORS).
+Reads ApiUrl, WebBucketName, CloudFrontDistributionId, UserPoolClientId,
+and CognitoRegion from the stack.
+Writes those values into config.js so the browser can call API Gateway
+and Cognito.
 
 Run after sam deploy:
 
@@ -15,7 +17,11 @@ import os
 
 STACK_NAME = "employee-rating"
 CONFIG_PATH = os.path.join("web", "config.js")
-EMPTY_CONFIG = 'window.EMPLOYEE_API_BASE = "";\n'
+EMPTY_CONFIG = (
+    'window.EMPLOYEE_API_BASE = "";\n'
+    'window.COGNITO_CLIENT_ID = "";\n'
+    'window.COGNITO_REGION = "";\n'
+)
 
 
 def read_outputs():
@@ -40,9 +46,11 @@ def read_outputs():
     return result
 
 
-def write_config(api_url):
+def write_config(api_url, client_id, region):
     with open(CONFIG_PATH, "w") as file:
         file.write('window.EMPLOYEE_API_BASE = "' + api_url + '";\n')
+        file.write('window.COGNITO_CLIENT_ID = "' + client_id + '";\n')
+        file.write('window.COGNITO_REGION = "' + region + '";\n')
 
 
 def restore_config():
@@ -56,11 +64,14 @@ def main():
     bucket = outputs["WebBucketName"]
     distribution_id = outputs["CloudFrontDistributionId"]
     website_url = outputs["WebsiteUrl"]
+    client_id = outputs["UserPoolClientId"]
+    region = outputs["CognitoRegion"]
 
     print("API URL:", api_url)
     print("S3 bucket:", bucket)
+    print("Cognito client:", client_id)
 
-    write_config(api_url)
+    write_config(api_url, client_id, region)
     try:
         subprocess.check_call(
             ["aws", "s3", "sync", "web/", "s3://" + bucket + "/", "--delete"]

@@ -127,11 +127,23 @@ sam deploy
 python3 upload_web.py
 ```
 
-`upload_web.py` copies `web/` to the S3 bucket, writes the API URL into `config.js` for that upload, then restores the empty local `config.js`. SAM prints `WebsiteUrl`. Open that HTTPS CloudFront address.
+`upload_web.py` copies `web/` to the S3 bucket, writes the API URL and Cognito client id into `config.js` for that upload, then restores the empty local `config.js`. SAM prints `WebsiteUrl`. Open that HTTPS CloudFront address.
 
-The browser is on CloudFront. The API is on API Gateway. That is a different website, so the API allows CORS (`Access-Control-Allow-Origin: *` on Lambda, plus CORS on the HTTP API and the S3 bucket).
+The browser is on CloudFront. The API is on API Gateway. That is a different website, so the API allows CORS (`Access-Control-Allow-Origin: *` on Lambda, plus CORS on the HTTP API).
 
-Cognito login is not set up yet. Anyone with the CloudFront URL can use the API.
+## How Cognito login works
+
+On AWS the HTTP API requires a Cognito **id token**. Sign up on the CloudFront page, confirm the code from your email, then log in. The page sends `Authorization: Bearer ...` on every API call.
+
+On the laptop (`python3 server.py`) Cognito is off, so you can still use the app with `employees.json`.
+
+After you change the template, deploy again and re-upload the site:
+
+```bash
+sam build
+sam deploy
+python3 upload_web.py
+```
 
 ## How this maps to AWS
 
@@ -141,7 +153,7 @@ Cognito login is not set up yet. Anyone with the CloudFront URL can use the API.
 | Python functions in `employee_store.py` | Lambda + `dynamodb_store.py`   |                                |
 | `server.py` on your laptop              | API Gateway                    |                                |
 | `web/` folder                           | S3 + CloudFront                |                                |
-| No login                                |                                | Amazon Cognito (manager login) |
+| No login                                | Amazon Cognito (manager login) | SNS/SES email on a rating      |
 
 
 
@@ -154,11 +166,12 @@ Cognito login is not set up yet. Anyone with the CloudFront URL can use the API.
 - `web/index.html` — web page
 - `web/styles.css` — page styles
 - `web/app.js` — talks to the API and updates the page
-- `web/config.js` — API base URL (empty on the laptop)
+- `web/cognito.js` — sign up, confirm, and log in
+- `web/config.js` — API URL and Cognito ids (empty on the laptop)
 - `upload_web.py` — copies `web/` to S3 and refreshes CloudFront
 - `test_employee_store.py` — tests for the store functions
 - `test_lambda_function.py` — tests for the Lambda routes
-- `template.yaml` — SAM template (table, Lambda, API Gateway, S3, CloudFront)
+- `template.yaml` — SAM template (table, Lambda, API Gateway, S3, CloudFront, Cognito)
 - `lambda_src/` — Lambda code that reads and writes DynamoDB
 - `employees.json` — created after you add the first employee (local only)
 
