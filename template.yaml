@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: Employee rating API — DynamoDB, Lambda, API Gateway
+Description: Employee rating API — DynamoDB, Lambda, API Gateway, S3, CloudFront
 
 Globals:
   Function:
@@ -84,6 +84,83 @@ Resources:
             Path: /api/employees/{id}/ratings
             Method: POST
 
+  WebBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            MaxAge: 3000
+
+  WebBucketOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-web-oac"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  WebDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: Employee rating web app
+        DefaultRootObject: index.html
+        HttpVersion: http2
+        PriceClass: PriceClass_All
+        Origins:
+          - Id: WebS3Origin
+            DomainName: !GetAtt WebBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt WebBucketOAC.Id
+        DefaultCacheBehavior:
+          TargetOriginId: WebS3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+
+  WebBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontRead
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${WebBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${WebDistribution}"
+
 Outputs:
   ApiUrl:
     Description: Base URL for the API (same paths as server.py)
@@ -91,3 +168,12 @@ Outputs:
   TableName:
     Description: DynamoDB table for employees
     Value: !Ref EmployeesTable
+  WebBucketName:
+    Description: S3 bucket for the web folder
+    Value: !Ref WebBucket
+  WebsiteUrl:
+    Description: CloudFront URL for the web app
+    Value: !Sub "https://${WebDistribution.DomainName}"
+  CloudFrontDistributionId:
+    Description: Use this to refresh the site after upload
+    Value: !Ref WebDistribution
