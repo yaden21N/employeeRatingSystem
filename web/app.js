@@ -1,3 +1,8 @@
+function apiUrl(path) {
+  var base = window.EMPLOYEE_API_BASE || "";
+  return base + path;
+}
+
 function averageScore(ratings) {
   if (ratings.length === 0) {
     return "none yet";
@@ -112,7 +117,7 @@ function showEmployees(employees) {
       if (!ok) {
         return;
       }
-      fetch("/api/employees/" + id, { method: "DELETE" })
+      fetch(apiUrl("/api/employees/" + id), { method: "DELETE" })
         .then(function (response) {
           return response.json().then(function (data) {
             return { ok: response.ok, data: data };
@@ -127,7 +132,7 @@ function showEmployees(employees) {
           loadEmployees();
         })
         .catch(function () {
-          setStatus("Could not delete. Is the server running?", "error");
+          setStatus("Could not delete. Is the API reachable?", "error");
         });
     });
     actionCell.appendChild(deleteButton);
@@ -139,7 +144,7 @@ function showEmployees(employees) {
 }
 
 function loadEmployees(query) {
-  var url = "/api/employees";
+  var url = apiUrl("/api/employees");
   if (query && query !== "") {
     url = url + "?q=" + encodeURIComponent(query);
   }
@@ -155,7 +160,7 @@ function loadEmployees(query) {
       showEmployees(data.employees);
     })
     .catch(function () {
-      setStatus("Could not load employees. Is the server running?", "error");
+      setStatus("Could not load employees. Is the API reachable?", "error");
     });
 }
 
@@ -179,7 +184,7 @@ document.getElementById("add-form").addEventListener("submit", function (event) 
     email: document.getElementById("add-email").value,
   };
 
-  fetch("/api/employees", {
+  fetch(apiUrl("/api/employees"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -199,7 +204,7 @@ document.getElementById("add-form").addEventListener("submit", function (event) 
       loadEmployees();
     })
     .catch(function () {
-      setStatus("Could not add employee. Is the server running?", "error");
+      setStatus("Could not add employee. Is the API reachable?", "error");
     });
 });
 
@@ -213,7 +218,7 @@ document.getElementById("rate-form").addEventListener("submit", function (event)
     comment: comment,
   };
 
-  fetch("/api/employees/" + employeeId + "/ratings", {
+  fetch(apiUrl("/api/employees/" + employeeId + "/ratings"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -233,7 +238,7 @@ document.getElementById("rate-form").addEventListener("submit", function (event)
       loadEmployees();
     })
     .catch(function () {
-      setStatus("Could not save rating. Is the server running?", "error");
+      setStatus("Could not save rating. Is the API reachable?", "error");
     });
 });
 
@@ -247,7 +252,7 @@ document.getElementById("edit-form").addEventListener("submit", function (event)
     email: document.getElementById("edit-email").value,
   };
 
-  fetch("/api/employees/" + employeeId, {
+  fetch(apiUrl("/api/employees/" + employeeId), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -267,7 +272,7 @@ document.getElementById("edit-form").addEventListener("submit", function (event)
       loadEmployees();
     })
     .catch(function () {
-      setStatus("Could not update employee. Is the server running?", "error");
+      setStatus("Could not update employee. Is the API reachable?", "error");
     });
 });
 

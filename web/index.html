@@ -9,7 +9,9 @@
   <body>
     <h1>Employee Rating System</h1>
     <p class="note">
-      Local app. Data is saved in <code>employees.json</code> on this computer.
+      On this laptop the API is <code>server.py</code> and
+      <code>employees.json</code>. On AWS the page talks to API Gateway
+      (DynamoDB) using CORS.
     </p>
     <p id="status"></p>
 
@@ -82,6 +84,7 @@
       </section>
     </div>
 
+    <script src="config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
