@@ -2,7 +2,7 @@
 
 Terminal and local web app for a manager to add employees, search them, rate them, edit them, and delete them.
 
-This is the local version plus an AWS API (DynamoDB, Lambda, API Gateway). The laptop app still uses `employees.json`. The cloud app uses a DynamoDB table.
+This is the local version plus an AWS API (DynamoDB, Lambda, API Gateway) and a cloud web page (S3 + CloudFront). The laptop app still uses `employees.json`. The cloud app uses a DynamoDB table.
 
 ## How to run the web app
 
@@ -115,7 +115,23 @@ POST {ApiUrl}/api/employees
 POST {ApiUrl}/api/employees/{id}/ratings
 ```
 
-The laptop web page (`python3 server.py`) still talks to the local server. S3, CloudFront, and Cognito are not set up yet.
+The laptop web page (`python3 server.py`) still talks to the local server.
+
+## How to put the web page on S3 and CloudFront
+
+After the stack exists (first `sam deploy` can take several minutes because CloudFront is slow):
+
+```bash
+sam build
+sam deploy
+python3 upload_web.py
+```
+
+`upload_web.py` copies `web/` to the S3 bucket, writes the API URL into `config.js` for that upload, then restores the empty local `config.js`. SAM prints `WebsiteUrl`. Open that HTTPS CloudFront address.
+
+The browser is on CloudFront. The API is on API Gateway. That is a different website, so the API allows CORS (`Access-Control-Allow-Origin: *` on Lambda, plus CORS on the HTTP API and the S3 bucket).
+
+Cognito login is not set up yet. Anyone with the CloudFront URL can use the API.
 
 ## How this maps to AWS
 
@@ -124,7 +140,7 @@ The laptop web page (`python3 server.py`) still talks to the local server. S3, C
 | `employees.json`                        | DynamoDB table                 |                                |
 | Python functions in `employee_store.py` | Lambda + `dynamodb_store.py`   |                                |
 | `server.py` on your laptop              | API Gateway                    |                                |
-| `web/` folder                           |                                | S3 + CloudFront                |
+| `web/` folder                           | S3 + CloudFront                |                                |
 | No login                                |                                | Amazon Cognito (manager login) |
 
 
@@ -138,9 +154,11 @@ The laptop web page (`python3 server.py`) still talks to the local server. S3, C
 - `web/index.html` — web page
 - `web/styles.css` — page styles
 - `web/app.js` — talks to the API and updates the page
+- `web/config.js` — API base URL (empty on the laptop)
+- `upload_web.py` — copies `web/` to S3 and refreshes CloudFront
 - `test_employee_store.py` — tests for the store functions
 - `test_lambda_function.py` — tests for the Lambda routes
-- `template.yaml` — SAM template (table, Lambda, API Gateway)
+- `template.yaml` — SAM template (table, Lambda, API Gateway, S3, CloudFront)
 - `lambda_src/` — Lambda code that reads and writes DynamoDB
 - `employees.json` — created after you add the first employee (local only)
 
