@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: Employee rating API — DynamoDB, Lambda, API Gateway, S3, CloudFront
+Description: Employee rating API — DynamoDB, Lambda, API Gateway, S3, CloudFront, Cognito
 
 Globals:
   Function:
@@ -8,6 +8,38 @@ Globals:
     Runtime: python3.12
 
 Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${AWS::StackName}-managers"
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub "${AWS::StackName}-web"
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      PreventUserExistenceErrors: ENABLED
+
   EmployeesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -23,11 +55,21 @@ Resources:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: prod
+      Auth:
+        DefaultAuthorizer: CognitoJwt
+        Authorizers:
+          CognitoJwt:
+            IdentitySource: "$request.header.Authorization"
+            JwtConfiguration:
+              issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}"
+              audience:
+                - !Ref UserPoolClient
       CorsConfiguration:
         AllowOrigins:
           - "*"
         AllowHeaders:
           - Content-Type
+          - Authorization
         AllowMethods:
           - GET
           - POST
@@ -177,3 +219,12 @@ Outputs:
   CloudFrontDistributionId:
     Description: Use this to refresh the site after upload
     Value: !Ref WebDistribution
+  UserPoolId:
+    Description: Cognito user pool
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Description: Cognito app client for the web page
+    Value: !Ref UserPoolClient
+  CognitoRegion:
+    Description: Region for cognito-idp calls from the browser
+    Value: !Ref AWS::Region
