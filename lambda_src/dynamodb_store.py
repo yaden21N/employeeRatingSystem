@@ -7,7 +7,7 @@ This is the cloud version of employee_store.py (which uses a JSON file).
 import os
 import uuid
 
-from employee_rules import _check_employee_fields, _check_score, _clean_text
+from employee_rules import _check_comment, _check_employee_fields, _check_score, _clean_text
 
 
 def _table():
@@ -107,9 +107,7 @@ def search_employees(query):
 
 def rate_employee(employee_id, score, comment):
     score = _check_score(score)
-    comment = _clean_text(comment)
-    if comment == "":
-        comment = "(no comment)"
+    comment = _check_comment(comment)
 
     employee = get_employee_by_id(employee_id)
     if employee is None:
