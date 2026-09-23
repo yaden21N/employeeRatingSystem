@@ -9,13 +9,12 @@
   <body>
     <h1>Employee Rating System</h1>
     <p class="note">
-      On this laptop there is no login. On AWS you sign up with email,
-      confirm the code, then log in. API Gateway checks the Cognito token.
+      Sign up with your email, confirm the code from your email, then log in.
     </p>
     <p id="status"></p>
 
     <section id="auth-section" hidden>
-      <h2>Manager login</h2>
+      <h2>Log in</h2>
       <p id="logged-in-as" hidden></p>
       <button type="button" id="logout-button" hidden>Log out</button>
 
@@ -42,6 +41,40 @@
         <label>Password <input id="login-password" type="password" required /></label>
         <button type="submit">Log in</button>
       </form>
+    </section>
+
+    <section id="choose-role" hidden>
+      <h2>Choose your role</h2>
+      <p>Employees can see their own ratings. A manager can add and rate employees after an admin approves the request.</p>
+      <button type="button" id="choose-employee">I am an employee</button>
+      <button type="button" id="choose-manager">Ask to be a manager</button>
+    </section>
+
+    <section id="pending-role" hidden>
+      <h2>Waiting for approval</h2>
+      <p>Waiting for an admin to approve you.</p>
+    </section>
+
+    <section id="approved-role" hidden>
+      <h2>You are approved</h2>
+      <p>Log out, then log in again. The manager page loads on the next login.</p>
+    </section>
+
+    <section id="my-ratings" hidden>
+      <h2>My ratings</h2>
+      <p id="my-ratings-empty" class="empty" hidden>No rating record for this email yet.</p>
+      <div id="my-ratings-card" hidden>
+        <p id="my-name"></p>
+        <p id="my-email"></p>
+        <p id="my-average"></p>
+        <ul id="my-rating-list"></ul>
+      </div>
+    </section>
+
+    <section id="admin-requests" hidden>
+      <h2>Manager requests</h2>
+      <p id="no-requests" class="empty" hidden>No one is waiting.</p>
+      <ul id="request-list"></ul>
     </section>
 
     <div id="app-main">
@@ -81,10 +114,10 @@
       <section>
         <h2>Add employee</h2>
         <form id="add-form">
-          <label>Full name <input id="add-name" type="text" required /></label>
-          <label>Department <input id="add-department" type="text" /></label>
-          <label>Job title <input id="add-job-title" type="text" /></label>
-          <label>Email <input id="add-email" type="email" /></label>
+          <label>Full name <input id="add-name" type="text" maxlength="80" required /></label>
+          <label>Department <input id="add-department" type="text" maxlength="40" /></label>
+          <label>Job title <input id="add-job-title" type="text" maxlength="40" /></label>
+          <label>Email <input id="add-email" type="email" maxlength="80" required /></label>
           <button type="submit">Add</button>
         </form>
       </section>
@@ -97,7 +130,7 @@
             Score (1 to 5)
             <input id="rate-score" type="number" min="1" max="5" required />
           </label>
-          <label>Comment <input id="rate-comment" type="text" /></label>
+          <label>Comment <input id="rate-comment" type="text" maxlength="200" /></label>
           <button type="submit">Save rating</button>
         </form>
       </section>
@@ -106,10 +139,10 @@
         <h2>Edit employee</h2>
         <form id="edit-form">
           <label>Employee ID <input id="edit-id" type="text" required /></label>
-          <label>Full name <input id="edit-name" type="text" required /></label>
-          <label>Department <input id="edit-department" type="text" /></label>
-          <label>Job title <input id="edit-job-title" type="text" /></label>
-          <label>Email <input id="edit-email" type="email" /></label>
+          <label>Full name <input id="edit-name" type="text" maxlength="80" required /></label>
+          <label>Department <input id="edit-department" type="text" maxlength="40" /></label>
+          <label>Job title <input id="edit-job-title" type="text" maxlength="40" /></label>
+          <label>Email <input id="edit-email" type="email" maxlength="80" required /></label>
           <button type="submit">Save changes</button>
         </form>
       </section>

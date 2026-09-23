@@ -1,7 +1,7 @@
 """
 Employee data in DynamoDB.
 
-This is the cloud version of employee_store.py (which uses a JSON file).
+Employee rows live in DynamoDB. The web page reads and writes them through the Lambda API.
 """
 
 import os

@@ -1,5 +1,5 @@
 """
-Shared checks and JSON shapes for the local store and the Lambda API.
+Shared checks and JSON shapes for the Lambda API.
 """
 
 

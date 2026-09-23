@@ -1,3 +1,5 @@
+var currentRole = "";
+
 function apiUrl(path) {
   var base = window.EMPLOYEE_API_BASE || "";
   return base + path;
@@ -30,9 +32,17 @@ function apiFetch(url, options) {
   });
 }
 
+function hideRoleScreens() {
+  document.getElementById("choose-role").hidden = true;
+  document.getElementById("pending-role").hidden = true;
+  document.getElementById("approved-role").hidden = true;
+  document.getElementById("my-ratings").hidden = true;
+  document.getElementById("admin-requests").hidden = true;
+  document.getElementById("app-main").hidden = true;
+}
+
 function refreshAuthView() {
   var authSection = document.getElementById("auth-section");
-  var appMain = document.getElementById("app-main");
   var signup = document.getElementById("signup-form");
   var confirm = document.getElementById("confirm-form");
   var login = document.getElementById("login-form");
@@ -41,7 +51,8 @@ function refreshAuthView() {
 
   if (!cognitoIsOn()) {
     authSection.hidden = true;
-    appMain.hidden = false;
+    hideRoleScreens();
+    document.getElementById("app-main").hidden = false;
     return;
   }
 
@@ -53,15 +64,204 @@ function refreshAuthView() {
     loggedInAs.hidden = false;
     loggedInAs.textContent = "You are logged in.";
     logoutButton.hidden = false;
-    appMain.hidden = false;
+    hideRoleScreens();
+    loadRole();
   } else {
     signup.hidden = false;
     confirm.hidden = false;
     login.hidden = false;
     loggedInAs.hidden = true;
     logoutButton.hidden = true;
-    appMain.hidden = true;
+    currentRole = "";
+    hideRoleScreens();
   }
+}
+
+function loadRole() {
+  apiFetch(apiUrl("/api/role"))
+    .then(function (response) {
+      return response.json().then(function (data) {
+        return { ok: response.ok, data: data };
+      });
+    })
+    .then(function (result) {
+      if (!result.ok) {
+        setStatus(readError(result.data, "Could not load your role."), "error");
+        return;
+      }
+      var loggedInAs = document.getElementById("logged-in-as");
+      loggedInAs.textContent = "Logged in as " + result.data.email + ".";
+      showRole(result.data.role);
+    })
+    .catch(function () {
+      setStatus("Could not load your role. Is the API reachable?", "error");
+    });
+}
+
+function showRole(role) {
+  currentRole = role;
+  hideRoleScreens();
+
+  if (role === "none") {
+    document.getElementById("choose-role").hidden = false;
+    return;
+  }
+  if (role === "pending") {
+    document.getElementById("pending-role").hidden = false;
+    return;
+  }
+  if (role === "approved") {
+    document.getElementById("approved-role").hidden = false;
+    return;
+  }
+  if (role === "employee") {
+    document.getElementById("my-ratings").hidden = false;
+    loadEmployees();
+    return;
+  }
+  if (role === "manager" || role === "admin") {
+    document.getElementById("app-main").hidden = false;
+    loadEmployees();
+  }
+  if (role === "admin") {
+    document.getElementById("admin-requests").hidden = false;
+    loadManagerRequests();
+  }
+}
+
+function chooseRole(choice) {
+  apiFetch(apiUrl("/api/role"), {
+    method: "POST",
+    body: JSON.stringify({ choice: choice }),
+  })
+    .then(function (response) {
+      return response.json().then(function (data) {
+        return { ok: response.ok, data: data };
+      });
+    })
+    .then(function (result) {
+      if (!result.ok) {
+        setStatus(readError(result.data, "Could not save your choice."), "error");
+        return;
+      }
+      if (choice === "manager") {
+        setStatus("Request sent. An admin still needs to approve you.", "ok");
+      } else {
+        setStatus("You are signed in as an employee.", "ok");
+      }
+      showRole(result.data.role);
+    })
+    .catch(function () {
+      setStatus("Could not save your choice. Is the API reachable?", "error");
+    });
+}
+
+function showMyRatings(employees) {
+  var empty = document.getElementById("my-ratings-empty");
+  var card = document.getElementById("my-ratings-card");
+  var list = document.getElementById("my-rating-list");
+  list.innerHTML = "";
+
+  if (employees.length === 0) {
+    empty.hidden = false;
+    card.hidden = true;
+    return;
+  }
+
+  var employee = employees[0];
+  var ratings = employee.ratings || [];
+  empty.hidden = true;
+  card.hidden = false;
+  document.getElementById("my-name").textContent = employee.name;
+  document.getElementById("my-email").textContent = employee.email;
+  document.getElementById("my-average").textContent = "Average: " + averageScore(ratings);
+
+  if (ratings.length === 0) {
+    var none = document.createElement("li");
+    none.textContent = "No ratings yet.";
+    list.appendChild(none);
+    return;
+  }
+
+  var i = 0;
+  while (i < ratings.length) {
+    var item = document.createElement("li");
+    item.textContent = ratings[i].score + "/5: " + ratings[i].comment;
+    list.appendChild(item);
+    i = i + 1;
+  }
+}
+
+function loadManagerRequests() {
+  apiFetch(apiUrl("/api/manager-requests"))
+    .then(function (response) {
+      return response.json().then(function (data) {
+        return { ok: response.ok, data: data };
+      });
+    })
+    .then(function (result) {
+      if (!result.ok) {
+        setStatus(readError(result.data, "Could not load manager requests."), "error");
+        return;
+      }
+      showManagerRequests(result.data.requests || []);
+    })
+    .catch(function () {
+      setStatus("Could not load manager requests. Is the API reachable?", "error");
+    });
+}
+
+function showManagerRequests(requests) {
+  var empty = document.getElementById("no-requests");
+  var list = document.getElementById("request-list");
+  list.innerHTML = "";
+
+  if (requests.length === 0) {
+    empty.hidden = false;
+    return;
+  }
+
+  empty.hidden = true;
+  var i = 0;
+  while (i < requests.length) {
+    var request = requests[i];
+    var item = document.createElement("li");
+    item.textContent = request.email + " ";
+
+    var approveButton = document.createElement("button");
+    approveButton.type = "button";
+    approveButton.textContent = "Approve";
+    approveButton.setAttribute("data-email", request.email);
+    approveButton.addEventListener("click", function () {
+      approveManager(this.getAttribute("data-email"));
+    });
+    item.appendChild(approveButton);
+    list.appendChild(item);
+    i = i + 1;
+  }
+}
+
+function approveManager(email) {
+  apiFetch(apiUrl("/api/manager-requests/approve"), {
+    method: "POST",
+    body: JSON.stringify({ email: email }),
+  })
+    .then(function (response) {
+      return response.json().then(function (data) {
+        return { ok: response.ok, data: data };
+      });
+    })
+    .then(function (result) {
+      if (!result.ok) {
+        setStatus(readError(result.data, "Could not approve that manager."), "error");
+        return;
+      }
+      setStatus("Approved " + email + ". They should log in again.", "ok");
+      loadManagerRequests();
+    })
+    .catch(function () {
+      setStatus("Could not approve that manager. Is the API reachable?", "error");
+    });
 }
 
 function averageScore(ratings) {
@@ -218,6 +418,10 @@ function loadEmployees(query) {
       return response.json();
     })
     .then(function (data) {
+      if (currentRole === "employee") {
+        showMyRatings(data.employees);
+        return;
+      }
       showEmployees(data.employees);
     })
     .catch(function () {
@@ -382,7 +586,6 @@ document.getElementById("login-form").addEventListener("submit", function (event
       }
       refreshAuthView();
       setStatus("Logged in.", "ok");
-      loadEmployees();
     })
     .catch(function () {
       setStatus("Could not reach Cognito.", "error");
@@ -395,7 +598,15 @@ document.getElementById("logout-button").addEventListener("click", function () {
   setStatus("Logged out.", "ok");
 });
 
+document.getElementById("choose-employee").addEventListener("click", function () {
+  chooseRole("employee");
+});
+
+document.getElementById("choose-manager").addEventListener("click", function () {
+  chooseRole("manager");
+});
+
 refreshAuthView();
-if (!cognitoIsOn() || getIdToken()) {
+if (!cognitoIsOn()) {
   loadEmployees();
 }

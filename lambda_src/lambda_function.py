@@ -1,7 +1,7 @@
 """
 Lambda handler for the employee API.
 
-Paths match server.py so the web page can use the same URLs later.
+The web page calls these same paths.
 """
 
 import json

@@ -1,5 +1,5 @@
 // Cognito sign-up, confirm, and login from the browser.
-// Local laptop: COGNITO_CLIENT_ID is empty, so this is skipped.
+// config.js in git has an empty client id. upload_web.py fills it on S3.
 
 function cognitoIsOn() {
   return Boolean(window.COGNITO_CLIENT_ID);

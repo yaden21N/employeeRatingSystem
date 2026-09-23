@@ -263,7 +263,7 @@ Resources:
 
 Outputs:
   ApiUrl:
-    Description: Base URL for the API (same paths as server.py)
+    Description: Base URL for the API
     Value: !Sub "https://${EmployeeApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
   TableName:
     Description: DynamoDB table for employees

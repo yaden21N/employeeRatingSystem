@@ -59,6 +59,10 @@ td {
   color: #555;
 }
 
+ul {
+  padding-left: 20px;
+}
+
 .error {
   color: #a00;
 }
