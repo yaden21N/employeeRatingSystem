@@ -7,17 +7,29 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <h1>Employee Rating System</h1>
-    <p class="note">
-      Sign up with your email, confirm the code from your email, then log in.
-    </p>
+    <header class="banner">
+      <div class="banner-inner">
+        <div>
+          <h1>Employee Rating System</h1>
+          <p class="note">
+            Sign up with your email, confirm the code from your email, then log in.
+          </p>
+        </div>
+        <img class="hero" src="hero.svg" alt="" width="220" height="124" />
+      </div>
+    </header>
+    <main>
     <p id="status"></p>
 
     <section id="auth-section" hidden>
       <h2>Log in</h2>
-      <p id="logged-in-as" hidden></p>
-      <button type="button" id="logout-button" hidden>Log out</button>
+      <div class="logged-in-row">
+        <p id="logged-in-as" hidden></p>
+        <span id="role-label" class="role-label" hidden></span>
+        <button type="button" id="logout-button" class="secondary" hidden>Log out</button>
+      </div>
 
+      <div class="auth-forms">
       <form id="signup-form">
         <h3>Sign up</h3>
         <label>Email <input id="signup-email" type="email" required /></label>
@@ -41,12 +53,13 @@
         <label>Password <input id="login-password" type="password" required /></label>
         <button type="submit">Log in</button>
       </form>
+      </div>
     </section>
 
     <section id="choose-role" hidden>
       <h2>Choose your role</h2>
       <p>Employees can see their own ratings. A manager can add and rate employees after an admin approves the request.</p>
-      <button type="button" id="choose-employee">I am an employee</button>
+      <button type="button" id="choose-employee" class="secondary">I am an employee</button>
       <button type="button" id="choose-manager">Ask to be a manager</button>
     </section>
 
@@ -87,7 +100,7 @@
           <input id="search-query" type="text" />
         </label>
         <button type="submit">Search</button>
-        <button type="button" id="show-all">Show all</button>
+        <button type="button" id="show-all" class="secondary">Show all</button>
       </form>
     </section>
 
@@ -148,6 +161,7 @@
       </section>
     </div>
     </div>
+    </main>
 
     <script src="config.js"></script>
     <script src="cognito.js"></script>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img" aria-label="People and stars">
+  <rect width="320" height="180" rx="16" fill="#1d4060"/>
+  <circle cx="70" cy="78" r="22" fill="#f4d35e"/>
+  <rect x="46" y="108" width="48" height="40" rx="16" fill="#7ec8c3"/>
+  <circle cx="160" cy="70" r="26" fill="#f7f3ea"/>
+  <rect x="128" y="104" width="64" height="46" rx="18" fill="#f2c14e"/>
+  <circle cx="248" cy="82" r="20" fill="#f4d35e"/>
+  <rect x="226" y="110" width="44" height="36" rx="14" fill="#7ec8c3"/>
+  <polygon points="250,28 254,40 266,40 256,48 260,60 250,52 240,60 244,48 234,40 246,40" fill="#f7f3ea"/>
+  <polygon points="40,28 43,36 52,36 45,42 48,50 40,45 32,50 35,42 28,36 37,36" fill="#f2c14e"/>
+</svg>

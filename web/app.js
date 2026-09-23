@@ -72,6 +72,7 @@ function refreshAuthView() {
     login.hidden = false;
     loggedInAs.hidden = true;
     logoutButton.hidden = true;
+    document.getElementById("role-label").hidden = true;
     currentRole = "";
     hideRoleScreens();
   }
@@ -91,11 +92,30 @@ function loadRole() {
       }
       var loggedInAs = document.getElementById("logged-in-as");
       loggedInAs.textContent = "Logged in as " + result.data.email + ".";
+      setRoleLabel(result.data.role);
       showRole(result.data.role);
     })
     .catch(function () {
       setStatus("Could not load your role. Is the API reachable?", "error");
     });
+}
+
+function setRoleLabel(role) {
+  var label = document.getElementById("role-label");
+  var names = {
+    none: "New account",
+    pending: "Waiting",
+    approved: "Approved",
+    employee: "Employee",
+    manager: "Manager",
+    admin: "Admin",
+  };
+  if (!names[role]) {
+    label.hidden = true;
+    return;
+  }
+  label.hidden = false;
+  label.textContent = names[role];
 }
 
 function showRole(role) {
@@ -186,6 +206,7 @@ function showMyRatings(employees) {
   var i = 0;
   while (i < ratings.length) {
     var item = document.createElement("li");
+    item.className = "rating-item";
     item.textContent = ratings[i].score + "/5: " + ratings[i].comment;
     list.appendChild(item);
     i = i + 1;
@@ -350,6 +371,7 @@ function showEmployees(employees) {
 
     var editButton = document.createElement("button");
     editButton.type = "button";
+    editButton.className = "secondary";
     editButton.textContent = "Edit";
     editButton.setAttribute("data-id", employee.id);
     editButton.setAttribute("data-name", employee.name);
@@ -368,6 +390,7 @@ function showEmployees(employees) {
 
     var deleteButton = document.createElement("button");
     deleteButton.type = "button";
+    deleteButton.className = "danger";
     deleteButton.textContent = "Delete";
     deleteButton.setAttribute("data-id", employee.id);
     deleteButton.setAttribute("data-name", employee.name);
