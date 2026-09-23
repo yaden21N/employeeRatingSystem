@@ -13,7 +13,7 @@ import json
 import os
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "lambda_src"))
@@ -22,10 +22,25 @@ import employee_rules
 import lambda_function
 
 
-def _http_event(method, path, query=None, body=None, employee_id=None):
+def _http_event(
+    method,
+    path,
+    query=None,
+    body=None,
+    employee_id=None,
+    email="manager@example.com",
+    groups="managers",
+):
+    claims = {"email": email}
+    if groups is not None:
+        claims["cognito:groups"] = groups
+
     event = {
         "rawPath": path,
-        "requestContext": {"http": {"method": method}},
+        "requestContext": {
+            "http": {"method": method},
+            "authorizer": {"jwt": {"claims": claims}},
+        },
         "queryStringParameters": query,
         "pathParameters": None,
         "body": None,
@@ -220,6 +235,94 @@ class TestLambdaFunction(unittest.TestCase):
         self.assertEqual(department, "Engineering")
         self.assertEqual(job_title, "Developer")
         self.assertEqual(email, "ada@example.com")
+
+    def test_employee_cannot_delete(self):
+        event = _http_event(
+            "DELETE",
+            "/api/employees/a1",
+            employee_id="a1",
+            email="ada@example.com",
+            groups=None,
+        )
+        with patch(
+            "lambda_function.role_store.get_role",
+            return_value={"email": "ada@example.com", "status": "employee"},
+        ):
+            with patch("lambda_function.store.delete_employee") as delete_employee:
+                response = lambda_function.lambda_handler(event, None)
+        self.assertEqual(response["statusCode"], 403)
+        self.assertEqual(_body(response)["error"], "You are not allowed to do that.")
+        delete_employee.assert_not_called()
+
+    def test_employee_list_returns_only_own_email(self):
+        people = [
+            {"id": "a1", "name": "Ada", "email": "ada@example.com"},
+            {"id": "b2", "name": "Grace", "email": "grace@example.com"},
+        ]
+        event = _http_event(
+            "GET",
+            "/api/employees",
+            email="ada@example.com",
+            groups=None,
+        )
+        with patch(
+            "lambda_function.role_store.get_role",
+            return_value={"email": "ada@example.com", "status": "employee"},
+        ):
+            with patch("lambda_function.store.list_employees", return_value=people):
+                response = lambda_function.lambda_handler(event, None)
+        employees = _body(response)["employees"]
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(len(employees), 1)
+        self.assertEqual(employees[0]["email"], "ada@example.com")
+
+    def test_pending_cannot_add(self):
+        event = _http_event(
+            "POST",
+            "/api/employees",
+            email="boss@example.com",
+            groups=None,
+            body={
+                "name": "Ada",
+                "department": "Engineering",
+                "job_title": "Developer",
+                "email": "ada@example.com",
+            },
+        )
+        with patch(
+            "lambda_function.role_store.get_role",
+            return_value={"email": "boss@example.com", "status": "pending"},
+        ):
+            with patch("lambda_function.store.add_employee") as add_employee:
+                response = lambda_function.lambda_handler(event, None)
+        self.assertEqual(response["statusCode"], 403)
+        add_employee.assert_not_called()
+
+    def test_admin_approve_adds_manager_group(self):
+        event = _http_event(
+            "POST",
+            "/api/manager-requests/approve",
+            email="admin@example.com",
+            groups="admins",
+            body={"email": "Boss@Example.com"},
+        )
+        fake_boto3 = MagicMock()
+        with patch(
+            "lambda_function.role_store.get_role",
+            return_value={"email": "boss@example.com", "status": "pending"},
+        ):
+            with patch("lambda_function.role_store.mark_approved") as mark_approved:
+                with patch.dict(sys.modules, {"boto3": fake_boto3}):
+                    response = lambda_function.lambda_handler(event, None)
+
+        self.assertEqual(response["statusCode"], 200)
+        self.assertEqual(_body(response)["ok"], True)
+        mark_approved.assert_called_once_with("boss@example.com")
+        fake_boto3.client.return_value.admin_add_user_to_group.assert_called_once_with(
+            UserPoolId="",
+            Username="boss@example.com",
+            GroupName="managers",
+        )
 
 
 if __name__ == "__main__":

@@ -40,6 +40,20 @@ Resources:
         - ALLOW_USER_SRP_AUTH
       PreventUserExistenceErrors: ENABLED
 
+  AdminsGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: admins
+      Description: Can approve manager requests
+      UserPoolId: !Ref UserPool
+
+  ManagersGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: managers
+      Description: Can add and rate employees after an admin approves them
+      UserPoolId: !Ref UserPool
+
   EmployeesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -49,6 +63,17 @@ Resources:
           AttributeType: S
       KeySchema:
         - AttributeName: id
+          KeyType: HASH
+
+  RoleTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: email
           KeyType: HASH
 
   EmployeeApi:
@@ -85,9 +110,18 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref EmployeesTable
+          ROLE_TABLE_NAME: !Ref RoleTable
+          USER_POOL_ID: !Ref UserPool
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref EmployeesTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RoleTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminAddUserToGroup
+              Resource: !GetAtt UserPool.Arn
       Events:
         ListEmployees:
           Type: HttpApi
@@ -124,6 +158,30 @@ Resources:
           Properties:
             ApiId: !Ref EmployeeApi
             Path: /api/employees/{id}/ratings
+            Method: POST
+        GetRole:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref EmployeeApi
+            Path: /api/role
+            Method: GET
+        ChooseRole:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref EmployeeApi
+            Path: /api/role
+            Method: POST
+        ListManagerRequests:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref EmployeeApi
+            Path: /api/manager-requests
+            Method: GET
+        ApproveManager:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref EmployeeApi
+            Path: /api/manager-requests/approve
             Method: POST
 
   WebBucket:
