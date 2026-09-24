@@ -45,6 +45,12 @@ def _check_employee_fields(name, department, job_title, email):
     return name, department, job_title, email
 
 
+def _check_search(query):
+    query = _clean_text(query)
+    _check_length(query, 80, "Search")
+    return query
+
+
 def _check_comment(comment):
     comment = _clean_text(comment)
     _check_length(comment, 200, "Comment")

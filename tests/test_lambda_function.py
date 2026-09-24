@@ -86,6 +86,23 @@ class TestLambdaFunction(unittest.TestCase):
         search.assert_called_once_with("ada")
         self.assertEqual(response["statusCode"], 200)
 
+    def test_search_rejects_long_query(self):
+        long_query = "a" * 81
+        with self.assertRaises(ValueError) as caught:
+            employee_rules._check_search(long_query)
+        self.assertEqual(str(caught.exception), "Search must be 80 characters or less.")
+
+        with patch(
+            "lambda_function.store.search_employees",
+            side_effect=ValueError("Search must be 80 characters or less."),
+        ):
+            response = lambda_function.lambda_handler(
+                _http_event("GET", "/api/employees", query={"q": long_query}),
+                None,
+            )
+        self.assertEqual(response["statusCode"], 400)
+        self.assertEqual(_body(response)["error"], "Search must be 80 characters or less.")
+
     def test_get_one_employee(self):
         person = {"id": "a1", "name": "Ada"}
         with patch("lambda_function.store.get_employee_by_id", return_value=person):

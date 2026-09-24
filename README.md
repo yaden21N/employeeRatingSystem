@@ -80,7 +80,7 @@ python3 upload_web.py
 
 `upload_web.py` copies `web/` to the S3 bucket, writes the API URL and Cognito client id into `config.js` for that upload, then restores the empty local `config.js`. SAM prints `WebsiteUrl`.
 
-The browser is on CloudFront. The API is on API Gateway. That is a different website, so the API allows CORS (`Access-Control-Allow-Origin: *` on Lambda, plus CORS on the HTTP API).
+The browser is on CloudFront. The API is on API Gateway. That is a different website, so the API allows CORS only from the CloudFront site.
 
 ## Rating notices
 
@@ -123,12 +123,31 @@ The page shows or hides the matching screen. Lambda is the check that allows or 
 
 ### Role tests
 
-`python3 -m unittest tests/test_lambda_function.py` runs 19 tests. These four check roles:
+`python3 -m unittest tests/test_lambda_function.py` runs 20 tests. These four check roles:
 
 - `test_employee_list_returns_only_own_email` — an employee list contains only that employee's row
 - `test_employee_cannot_delete` — an employee delete returns 403
 - `test_pending_cannot_add` — a pending user cannot add an employee
 - `test_admin_approve_adds_manager_group` — an admin approve adds the user to the managers group
+
+### Input checks
+
+The server checks the data before it is saved. The page is not the security check. The checks live in `lambda_src/employee_rules.py`.
+
+- Name, department, job title, and email are required to be short enough. Email must look like `name@example.com`.
+- A score must be a whole number from 1 to 5.
+- A comment must be 200 characters or less.
+- A search must be 80 characters or less. A longer search returns 400 and does not scan the table. `test_search_rejects_long_query` covers that check.
+
+### Password hashing
+
+Cognito stores the password. The Employees table and the Roles table do not. Lambda never writes the password down.
+
+The user pool asks for at least 8 characters, one lowercase letter, one uppercase letter, and one number (`template.yaml`).
+
+### Session
+
+The id token stays in `sessionStorage` (`web/cognito.js`). Logout deletes that token (`web/app.js`). Closing the tab clears it too. API Gateway rejects an expired or bad token, so Lambda does not run.
 
 ## Files
 

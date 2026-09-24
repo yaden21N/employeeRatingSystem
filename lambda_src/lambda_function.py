@@ -45,7 +45,10 @@ def lambda_handler(event, context):
         if search_text == "":
             employees = store.list_employees()
         else:
-            employees = store.search_employees(search_text)
+            try:
+                employees = store.search_employees(search_text)
+            except ValueError as error:
+                return _json(400, as_error(str(error)))
         employees = _only_own_rows(role, caller["email"], employees)
         return _json(200, as_employee_list(employees))
 
@@ -321,7 +324,7 @@ def _json(status, data):
         "statusCode": status,
         "headers": {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": os.environ.get("ALLOWED_ORIGIN", ""),
             "Access-Control-Allow-Headers": "Content-Type,Authorization",
             "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         },

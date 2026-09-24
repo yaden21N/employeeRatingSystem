@@ -7,7 +7,13 @@ Employee rows live in DynamoDB. The web page reads and writes them through the L
 import os
 import uuid
 
-from employee_rules import _check_comment, _check_employee_fields, _check_score, _clean_text
+from employee_rules import (
+    _check_comment,
+    _check_employee_fields,
+    _check_score,
+    _check_search,
+    _clean_text,
+)
 
 
 def _table():
@@ -79,7 +85,7 @@ def get_employee_by_id(employee_id):
 
 
 def search_employees(query):
-    query = _clean_text(query).lower()
+    query = _check_search(query).lower()
     employees = list_employees()
 
     if query == "":
