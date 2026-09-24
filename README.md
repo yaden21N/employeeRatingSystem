@@ -92,19 +92,43 @@ sam deploy --parameter-overrides NotifyEmail=you@example.com
 
 AWS emails that address a confirmation link. Notices start after you confirm it.
 
-## How Cognito login works
+## Cybersecurity
 
-The HTTP API requires a Cognito id token. The page sends `Authorization: Bearer ...` on every API call. Passwords stay in Cognito.
+This section is the capstone write-up. Later security work stays here too.
 
-After you change the template or the web files, deploy again and re-upload the site:
+### Login
 
-```bash
-sam build
-sam deploy
-python3 upload_web.py
-```
+The password goes to Cognito. The API sees an id token, not the password.
 
+1. The page sends the email and password to Cognito (`web/cognito.js`).
+2. Cognito returns an id token. The page stores it in `sessionStorage`.
+3. Each API call sends `Authorization: Bearer` plus that token (`web/app.js`).
+4. API Gateway checks the token before Lambda runs (`template.yaml`).
+5. Lambda reads the email and Cognito groups from the token (`_caller` in `lambda_src/lambda_function.py`).
 
+A call with no email on the token gets status 401.
+
+### Roles
+
+`_access_role` in `lambda_src/lambda_function.py` picks the role. Admin and manager come from Cognito groups. The other roles come from the Roles table.
+
+- **none** — no group and no row yet. The user must choose employee or ask to be a manager. Employee routes return 403.
+- **pending** — asked to be a manager and is waiting for an admin. Employee routes return 403.
+- **approved** — an admin approved the request and added the user to the managers group. The user logs out and logs in again so the new token includes that group.
+- **employee** — can list and open only the row with their own email. Add, edit, delete, and rate return 403.
+- **manager** — can list, search, add, edit, delete, and rate every employee.
+- **admin** — can do what a manager can do, and can list and approve manager requests.
+
+The page shows or hides the matching screen. Lambda is the check that allows or blocks the action.
+
+### Role tests
+
+`python3 -m unittest tests/test_lambda_function.py` runs 19 tests. These four check roles:
+
+- `test_employee_list_returns_only_own_email` — an employee list contains only that employee's row
+- `test_employee_cannot_delete` — an employee delete returns 403
+- `test_pending_cannot_add` — a pending user cannot add an employee
+- `test_admin_approve_adds_manager_group` — an admin approve adds the user to the managers group
 
 ## Files
 
