@@ -5,6 +5,7 @@ The web page calls these same paths.
 """
 
 import json
+import os
 
 import dynamodb_store as store
 import role_store
@@ -88,6 +89,7 @@ def lambda_handler(event, context):
             return _json(400, as_error(str(error)))
         if updated is None:
             return _json(404, as_error("No employee with that ID."))
+        _publish_rating(caller, updated, data.get("score"), data.get("comment"))
         return _json(200, as_employee(updated))
 
     if method == "PUT" and path_id is not None:
@@ -115,6 +117,39 @@ def lambda_handler(event, context):
         return _json(200, {"ok": True})
 
     return _json(404, as_error("Not found"))
+
+
+def _publish_rating(caller, employee, score, comment):
+    topic_arn = os.environ.get("RATING_TOPIC_ARN", "")
+    if topic_arn == "":
+        return
+
+    name = employee.get("name") or employee.get("id") or "an employee"
+    if comment is None or str(comment).strip() == "":
+        comment_text = "(no comment)"
+    else:
+        comment_text = str(comment).strip()
+
+    message = (
+        caller["email"]
+        + " rated "
+        + str(name)
+        + " "
+        + str(score)
+        + "/5. "
+        + comment_text
+    )
+
+    try:
+        import boto3
+
+        boto3.client("sns").publish(
+            TopicArn=topic_arn,
+            Subject="New employee rating",
+            Message=message,
+        )
+    except Exception as error:
+        print("Could not publish rating notice: " + str(error))
 
 
 def _caller(event):

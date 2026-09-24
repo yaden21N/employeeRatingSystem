@@ -82,6 +82,16 @@ python3 upload_web.py
 
 The browser is on CloudFront. The API is on API Gateway. That is a different website, so the API allows CORS (`Access-Control-Allow-Origin: *` on Lambda, plus CORS on the HTTP API).
 
+## Rating notices
+
+After a rating is saved, Lambda publishes a message to an SNS topic named `employee-rating-ratings`. To get those messages by email, deploy with your address:
+
+```bash
+sam deploy --parameter-overrides NotifyEmail=you@example.com
+```
+
+AWS emails that address a confirmation link. Notices start after you confirm it.
+
 ## How Cognito login works
 
 The HTTP API requires a Cognito id token. The page sends `Authorization: Bearer ...` on every API call. Passwords stay in Cognito.
@@ -105,6 +115,6 @@ python3 upload_web.py
 - `web/config.js` — API URL and Cognito ids (empty in git; filled only during upload)
 - `upload_web.py` — copies `web/` to S3 and refreshes CloudFront
 - `tests/test_lambda_function.py` — tests for the Lambda routes
-- `template.yaml` — SAM template (tables, Lambda, API Gateway, S3, CloudFront, Cognito)
+- `template.yaml` — SAM template (tables, Lambda, API Gateway, S3, CloudFront, Cognito, SNS)
 - `lambda_src/` — Lambda code that reads and writes DynamoDB
 

@@ -2,6 +2,15 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Employee rating API — DynamoDB, Lambda, API Gateway, S3, CloudFront, Cognito
 
+Parameters:
+  NotifyEmail:
+    Type: String
+    Default: ""
+    Description: Email that receives a notice when an employee is rated. Leave empty to skip the subscription.
+
+Conditions:
+  HasNotifyEmail: !Not [!Equals [!Ref NotifyEmail, ""]]
+
 Globals:
   Function:
     Timeout: 10
@@ -112,6 +121,7 @@ Resources:
           TABLE_NAME: !Ref EmployeesTable
           ROLE_TABLE_NAME: !Ref RoleTable
           USER_POOL_ID: !Ref UserPool
+          RATING_TOPIC_ARN: !Ref RatingTopic
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref EmployeesTable
@@ -122,6 +132,11 @@ Resources:
               Action:
                 - cognito-idp:AdminAddUserToGroup
               Resource: !GetAtt UserPool.Arn
+        - Statement:
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource: !Ref RatingTopic
       Events:
         ListEmployees:
           Type: HttpApi
@@ -183,6 +198,19 @@ Resources:
             ApiId: !Ref EmployeeApi
             Path: /api/manager-requests/approve
             Method: POST
+
+  RatingTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-ratings"
+
+  RatingEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotifyEmail
+    Properties:
+      TopicArn: !Ref RatingTopic
+      Protocol: email
+      Endpoint: !Ref NotifyEmail
 
   WebBucket:
     Type: AWS::S3::Bucket
@@ -283,6 +311,9 @@ Outputs:
   UserPoolClientId:
     Description: Cognito app client for the web page
     Value: !Ref UserPoolClient
+  RatingTopicArn:
+    Description: SNS topic that receives a message after each rating
+    Value: !Ref RatingTopic
   CognitoRegion:
     Description: Region for cognito-idp calls from the browser
     Value: !Ref AWS::Region

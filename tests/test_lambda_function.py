@@ -143,6 +143,31 @@ class TestLambdaFunction(unittest.TestCase):
             )
         self.assertEqual(response["statusCode"], 200)
 
+    def test_rate_publishes_sns_message(self):
+        person = {
+            "id": "a1",
+            "name": "Ada",
+            "ratings": [{"score": 5, "comment": "Good"}],
+        }
+        fake_boto3 = MagicMock()
+        event = _http_event(
+            "POST",
+            "/api/employees/a1/ratings",
+            employee_id="a1",
+            email="manager@example.com",
+            body={"score": 5, "comment": "Good"},
+        )
+        with patch.dict(os.environ, {"RATING_TOPIC_ARN": "arn:aws:sns:af-south-1:1:ratings"}):
+            with patch("lambda_function.store.rate_employee", return_value=person):
+                with patch.dict(sys.modules, {"boto3": fake_boto3}):
+                    response = lambda_function.lambda_handler(event, None)
+        self.assertEqual(response["statusCode"], 200)
+        fake_boto3.client.return_value.publish.assert_called_once_with(
+            TopicArn="arn:aws:sns:af-south-1:1:ratings",
+            Subject="New employee rating",
+            Message="manager@example.com rated Ada 5/5. Good",
+        )
+
     def test_edit_employee(self):
         person = {"id": "a1", "name": "Ada L"}
         with patch("lambda_function.store.edit_employee", return_value=person):
