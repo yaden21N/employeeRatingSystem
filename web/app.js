@@ -41,6 +41,27 @@ function hideRoleScreens() {
   document.getElementById("app-main").hidden = true;
 }
 
+function showAuthStep(step) {
+  document.getElementById("auth-choice").hidden = step !== "choose";
+  document.getElementById("signup-form").hidden = step !== "signup";
+  document.getElementById("confirm-form").hidden = step !== "confirm";
+  document.getElementById("login-form").hidden = step !== "login";
+
+  var heading = document.getElementById("auth-heading");
+  if (step === "choose") {
+    heading.textContent = "Welcome";
+  }
+  if (step === "signup") {
+    heading.textContent = "Sign up";
+  }
+  if (step === "confirm") {
+    heading.textContent = "Confirm email";
+  }
+  if (step === "login") {
+    heading.textContent = "Log in";
+  }
+}
+
 function refreshAuthView() {
   var authSection = document.getElementById("auth-section");
   var signup = document.getElementById("signup-form");
@@ -58,18 +79,18 @@ function refreshAuthView() {
 
   authSection.hidden = false;
   if (getIdToken()) {
+    document.getElementById("auth-choice").hidden = true;
     signup.hidden = true;
     confirm.hidden = true;
     login.hidden = true;
+    document.getElementById("auth-heading").textContent = "Your account";
     loggedInAs.hidden = false;
     loggedInAs.textContent = "You are logged in.";
     logoutButton.hidden = false;
     hideRoleScreens();
     loadRole();
   } else {
-    signup.hidden = false;
-    confirm.hidden = false;
-    login.hidden = false;
+    showAuthStep("choose");
     loggedInAs.hidden = true;
     logoutButton.hidden = true;
     document.getElementById("role-label").hidden = true;
@@ -572,6 +593,7 @@ document.getElementById("signup-form").addEventListener("submit", function (even
         return;
       }
       document.getElementById("confirm-email").value = email;
+      showAuthStep("confirm");
       setStatus("Check your email for a confirmation code.", "ok");
     })
     .catch(function () {
@@ -590,6 +612,7 @@ document.getElementById("confirm-form").addEventListener("submit", function (eve
         return;
       }
       document.getElementById("login-email").value = email;
+      showAuthStep("login");
       setStatus("Email confirmed. You can log in now.", "ok");
     })
     .catch(function () {
@@ -619,6 +642,26 @@ document.getElementById("logout-button").addEventListener("click", function () {
   setIdToken("");
   refreshAuthView();
   setStatus("Logged out.", "ok");
+});
+
+document.getElementById("show-signup").addEventListener("click", function () {
+  showAuthStep("signup");
+});
+
+document.getElementById("show-login").addEventListener("click", function () {
+  showAuthStep("login");
+});
+
+document.getElementById("signup-back").addEventListener("click", function () {
+  showAuthStep("choose");
+});
+
+document.getElementById("confirm-back").addEventListener("click", function () {
+  showAuthStep("signup");
+});
+
+document.getElementById("login-back").addEventListener("click", function () {
+  showAuthStep("choose");
 });
 
 document.getElementById("choose-employee").addEventListener("click", function () {

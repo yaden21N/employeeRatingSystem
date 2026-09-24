@@ -43,6 +43,10 @@ main {
   padding: 24px 16px 48px;
 }
 
+#auth-section {
+  max-width: 420px;
+}
+
 section,
 .forms section {
   background: #ffffff;
@@ -113,6 +117,10 @@ button.danger {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.role-label[hidden] {
+  display: none;
 }
 
 .role-label {

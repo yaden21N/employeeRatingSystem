@@ -12,7 +12,7 @@
         <div>
           <h1>Employee Rating System</h1>
           <p class="note">
-            Sign up with your email, confirm the code from your email, then log in.
+            Choose sign up or log in. A new account confirms a code from email first.
           </p>
         </div>
         <img class="hero" src="hero.svg" alt="" width="220" height="124" />
@@ -22,15 +22,20 @@
     <p id="status"></p>
 
     <section id="auth-section" hidden>
-      <h2>Log in</h2>
+      <h2 id="auth-heading">Welcome</h2>
       <div class="logged-in-row">
         <p id="logged-in-as" hidden></p>
         <span id="role-label" class="role-label" hidden></span>
         <button type="button" id="logout-button" class="secondary" hidden>Log out</button>
       </div>
 
-      <div class="auth-forms">
-      <form id="signup-form">
+      <div id="auth-choice">
+        <p>Are you signing up or logging in?</p>
+        <button type="button" id="show-signup">Sign up</button>
+        <button type="button" id="show-login" class="secondary">Log in</button>
+      </div>
+
+      <form id="signup-form" hidden>
         <h3>Sign up</h3>
         <label>Email <input id="signup-email" type="email" required /></label>
         <label>
@@ -38,22 +43,25 @@
           <input id="signup-password" type="password" required />
         </label>
         <button type="submit">Sign up</button>
+        <button type="button" id="signup-back" class="secondary">Back</button>
       </form>
 
-      <form id="confirm-form">
+      <form id="confirm-form" hidden>
         <h3>Confirm email</h3>
+        <p>Enter the code from your email. This is the same confirm step as before.</p>
         <label>Email <input id="confirm-email" type="email" required /></label>
         <label>Code from email <input id="confirm-code" type="text" required /></label>
         <button type="submit">Confirm</button>
+        <button type="button" id="confirm-back" class="secondary">Back</button>
       </form>
 
-      <form id="login-form">
+      <form id="login-form" hidden>
         <h3>Log in</h3>
         <label>Email <input id="login-email" type="email" required /></label>
         <label>Password <input id="login-password" type="password" required /></label>
         <button type="submit">Log in</button>
+        <button type="button" id="login-back" class="secondary">Back</button>
       </form>
-      </div>
     </section>
 
     <section id="choose-role" hidden>
