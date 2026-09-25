@@ -159,7 +159,7 @@ CloudFront adds `X-Content-Type-Options: nosniff` and `X-Frame-Options: SAMEORIG
 
 ### Authorized test
 
-Tested this CloudFront site and this API only. `ffuf` requested eight paths on the API with no token. `api/role`, `api/manager-requests`, and `api/employees` returned 401. `api/manager-requests/approve` returned 404 on GET because that path accepts POST only. `api/secret`, `admin`, `login`, and `api/users` returned 404. Those four are not in the API table.
+The full write-up is [cyber/pentest-report.md](cyber/pentest-report.md). Tested this CloudFront site and this API only. `ffuf` requested eight paths on the API with no token. `api/role`, `api/manager-requests`, and `api/employees` returned 401. `api/manager-requests/approve` returned 404 on GET because that path accepts POST only. `api/secret`, `admin`, `login`, and `api/users` returned 404. Those four are not in the API table.
 
 | Check                                                     | Result                                                                                                                                                                                                              |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
