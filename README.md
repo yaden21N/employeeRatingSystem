@@ -1,10 +1,10 @@
 # Employee Rating System
 
-Hosted web app for rating employees. An admin approves managers. A manager can add, search, rate, edit, and delete employees. An employee can see only their own ratings.
+One web application for two electives: Cloud and Cybersecurity. The same site rates employees. The Cloud elective hosts it on AWS. The Cybersecurity elective covers login, roles, input checks, and the test of this app.
 
 Open the site: [https://d256npmkht54jg.cloudfront.net](https://d256npmkht54jg.cloudfront.net)
 
-
+An admin approves managers. A manager can add, search, rate, edit, and delete employees. An employee can see only their own ratings.
 
 ## How to run the tests
 
@@ -12,9 +12,13 @@ Open the site: [https://d256npmkht54jg.cloudfront.net](https://d256npmkht54jg.cl
 python3 -m unittest tests/test_lambda_function.py
 ```
 
-The Lambda tests fake DynamoDB and Cognito, so they do not need AWS.
+The Lambda tests fake DynamoDB and Cognito, so they do not need AWS. They cover both electives.
 
-## What this version does
+## Cloud elective
+
+This elective is the hosted app: the page, the API, the database, and the rating email.
+
+### What the app does
 
 - Add name, department, job title, and email
 - Give each employee a short ID
@@ -23,15 +27,22 @@ The Lambda tests fake DynamoDB and Cognito, so they do not need AWS.
 - Show the average score
 - Edit details
 - Delete an employee
-- Reject an empty name, a bad email, a score that is not 1 to 5, and text that is too long
-- Three roles: admin, manager, and employee
 
+### AWS pieces
 
+`template.yaml` builds the stack.
 
-## API
+- **S3** stores the web page. The bucket is not public.
+- **CloudFront** serves the page over HTTPS. SAM prints `WebsiteUrl`.
+- **API Gateway** is the HTTP API the page calls.
+- **Lambda** (`lambda_src/`) reads and writes the data.
+- **DynamoDB** has one table for employees and one table for roles.
+- **Cognito** is the user pool for sign-up and login.
+- **SNS** sends a notice after a rating is saved.
 
-The CloudFront page calls this API. API Gateway requires a Cognito id token.
+The browser is on CloudFront. The API is on API Gateway. They are different websites, so the API only accepts browser calls from the CloudFront site.
 
+### API
 
 | Method | Path                            | What it does                           |
 | ------ | ------------------------------- | -------------------------------------- |
@@ -46,7 +57,6 @@ The CloudFront page calls this API. API Gateway requires a Cognito id token.
 | PUT    | `/api/employees/{id}`           | Edit                                   |
 | DELETE | `/api/employees/{id}`           | Delete                                 |
 | POST   | `/api/employees/{id}/ratings`   | Rate                                   |
-
 
 JSON list shape:
 
@@ -66,9 +76,7 @@ JSON error shape:
 { "error": "Name cannot be empty." }
 ```
 
-
-
-## How to deploy
+### How to deploy
 
 You need the [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) and an AWS account.
 
@@ -78,11 +86,9 @@ sam deploy
 python3 upload_web.py
 ```
 
-`upload_web.py` copies `web/` to the S3 bucket, writes the API URL and Cognito client id into `config.js` for that upload, then restores the empty local `config.js`. SAM prints `WebsiteUrl`.
+`upload_web.py` copies `web/` to the S3 bucket, writes the API URL and Cognito client id into `config.js` for that upload, then restores the empty local `config.js`.
 
-The browser is on CloudFront. The API is on API Gateway. That is a different website, so the API allows CORS only from the CloudFront site.
-
-## Rating notices
+### Rating notices
 
 After a rating is saved, Lambda publishes a message to an SNS topic named `employee-rating-ratings`. To get those messages by email, deploy with your address:
 
@@ -92,9 +98,9 @@ sam deploy --parameter-overrides NotifyEmail=you@example.com
 
 AWS emails that address a confirmation link. Notices start after you confirm it.
 
-## Cybersecurity
+## Cybersecurity elective
 
-This section is the capstone write-up. Later security work stays here too.
+This elective is the security of the same app: who can log in, what each role can do, how input is checked, and the test of this deployment.
 
 ### Login
 
@@ -123,7 +129,7 @@ The page shows or hides the matching screen. Lambda is the check that allows or 
 
 ### Role tests
 
-`python3 -m unittest tests/test_lambda_function.py` runs 20 tests. These four check roles:
+These four tests check roles:
 
 - `test_employee_list_returns_only_own_email` — an employee list contains only that employee's row
 - `test_employee_cannot_delete` — an employee delete returns 403
@@ -149,6 +155,22 @@ The user pool asks for at least 8 characters, one lowercase letter, one uppercas
 
 The id token stays in `sessionStorage` (`web/cognito.js`). Logout deletes that token (`web/app.js`). Closing the tab clears it too. API Gateway rejects an expired or bad token, so Lambda does not run.
 
+CloudFront adds `X-Content-Type-Options: nosniff` and `X-Frame-Options: SAMEORIGIN` on the page.
+
+### Authorized test
+
+Tested this CloudFront site and this API only. `ffuf` requested eight paths on the API with no token. `api/role`, `api/manager-requests`, and `api/employees` returned 401. `api/manager-requests/approve` returned 404 on GET because that path accepts POST only. `api/secret`, `admin`, `login`, and `api/users` returned 404. Those four are not in the API table.
+
+| Check                                                     | Result                                                                                                                                                                                                              |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| No token on list, role, add, or approve                   | Pass. Status 401.                                                                                                                                                                                                   |
+| Employee add, delete, rate, or approve                    | Pass. Status 403.                                                                                                                                                                                                   |
+| Employee list and get-by-id                               | Pass. The list had only `capstone.employee@example.com`. Opening another employee's id returned 403.                                                                                                                |
+| Bad email, empty name, score 9, long comment, long search | Pass. Status 400.                                                                                                                                                                                                   |
+| Call after the token is removed                           | Pass. Status 401. Logout clears `sessionStorage` in `web/app.js`, so the next call has no token.                                                                                                                    |
+| Password in DynamoDB, the page, or the token              | Pass. Employee rows have id, name, department, job title, email, and ratings. Role rows have email and status. The CloudFront page does not contain the test passwords. The token claims do not contain a password. |
+| Manager opening admin requests                            | Pass. Status 403. Admin list returned 200.                                                                                                                                                                          |
+
 ## Files
 
 - `web/index.html` — web page
@@ -160,4 +182,3 @@ The id token stays in `sessionStorage` (`web/cognito.js`). Logout deletes that t
 - `tests/test_lambda_function.py` — tests for the Lambda routes
 - `template.yaml` — SAM template (tables, Lambda, API Gateway, S3, CloudFront, Cognito, SNS)
 - `lambda_src/` — Lambda code that reads and writes DynamoDB
-
