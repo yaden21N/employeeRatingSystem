@@ -18,6 +18,8 @@ The Lambda tests fake DynamoDB and Cognito, so they do not need AWS. They cover 
 
 This elective is the hosted app: the page, the API, the database, and the rating email.
 
+Demo video: [https://youtu.be/SLmbEcLqRHA](https://youtu.be/SLmbEcLqRHA)
+
 ### What the app does
 
 - Add name, department, job title, and email
